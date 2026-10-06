@@ -1,0 +1,37 @@
+{
+  "openapi": "3.0.0",
+  "info": { "title": "Order Status API", "version": "1.0.0" },
+  "paths": {
+    "/orderStatus": {
+      "get": {
+        "summary": "Get the status of an order by order ID",
+        "operationId": "getOrderStatus",
+        "parameters": [
+          {
+            "name": "orderId",
+            "in": "query",
+            "required": true,
+            "schema": { "type": "string" },
+            "description": "The order ID to look up"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Order status",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": { "type": "string" },
+                    "eta": { "type": "string" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
