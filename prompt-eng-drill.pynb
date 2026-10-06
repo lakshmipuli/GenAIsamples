@@ -1,0 +1,59 @@
+import boto3, json
+
+client = boto3.client("bedrock-runtime", region_name="us-east-1")
+MODEL_ID = "anthropic.claude-3-5-sonnet-20241022-v2:0"  # adjust to what's enabled for you
+
+def ask(system, messages, max_tokens=500):
+    resp = client.converse(
+        modelId=MODEL_ID,
+        system=[{"text": system}],
+        messages=messages,
+        inferenceConfig={"maxTokens": max_tokens, "temperature": 0}
+    )
+    return resp["output"]["message"]["content"][0]["text"]
+
+system = "You are a technical writer. Summarize input text in exactly 3 bullet points, no fluff."
+text = "<paste a long paragraph>"
+print(ask(system, [{"role": "user", "content": [{"text": text}]}]))
+
+system = "Classify the sentiment of each message as Positive, Negative, or Neutral. Respond with only the label."
+examples = """
+Message: "This is the best product ever!"
+Label: Positive
+
+Message: "It broke after one day."
+Label: Negative
+
+Message: "It arrived on Tuesday."
+Label: Neutral
+"""
+msg = f"{examples}\nMessage: \"I'm not sure if I like this.\"\nLabel:"
+print(ask(system, [{"role": "user", "content": [{"text": msg}]}]))
+
+
+system = """Extract fields from the user's message and return ONLY valid JSON matching this schema:
+{"name": string, "date": string, "amount": number}
+No explanation, no markdown fences, just raw JSON."""
+msg = "Invoice from Jane Doe dated 2026-09-15 for $450.00"
+print(ask(system, [{"role": "user", "content": [{"text": msg}]}]))
+
+doc = "<paste full text, e.g. a short policy doc>"
+system = "Answer the user's question using ONLY the provided document. If the answer isn't in the document, say 'Not found in document.'"
+msg = f"Document:\n{doc}\n\nQuestion: What is the refund policy?"
+print(ask(system, [{"role": "user", "content": [{"text": msg}]}]))
+
+tool_config = {
+    "tools": [{
+        "toolSpec": {
+            "name": "get_weather",
+            "description": "Get current weather for a city",
+            "inputSchema": {"json": {"type": "object", "properties": {"city": {"type": "string"}}, "required": ["city"]}}
+        }
+    }]
+}
+resp = client.converse(
+    modelId=MODEL_ID,
+    messages=[{"role": "user", "content": [{"text": "What's the weather in Seattle?"}]}],
+    toolConfig=tool_config
+)
+print(resp["output"]["message"]["content"])
