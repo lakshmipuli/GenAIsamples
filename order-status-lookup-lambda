@@ -1,0 +1,32 @@
+import json
+
+# Fake in-memory "database" for the POC
+ORDERS = {
+    "1001": {"status": "Shipped", "eta": "2026-10-10"},
+    "1002": {"status": "Processing", "eta": "2026-10-15"},
+    "1003": {"status": "Delivered", "eta": "2026-09-28"},
+}
+
+def lambda_handler(event, context):
+    # Bedrock Agent action group event structure
+    params = event.get("parameters", [])
+    order_id = next((p["value"] for p in params if p["name"] == "orderId"), None)
+
+    order = ORDERS.get(order_id)
+    if order:
+        body = json.dumps(order)
+    else:
+        body = json.dumps({"error": f"Order {order_id} not found"})
+
+    return {
+        "messageVersion": "1.0",
+        "response": {
+            "actionGroup": event["actionGroup"],
+            "apiPath": event["apiPath"],
+            "httpMethod": event["httpMethod"],
+            "httpStatusCode": 200,
+            "responseBody": {
+                "application/json": {"body": body}
+            }
+        }
+    }
